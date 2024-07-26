@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Process Detail</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+    <div class="container">
+        <h1>Process: {{ process.name }}</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Terminal ID</th>
+                    <th>Response Code</th>
+                    <th>Date Time</th>
+                    <th>Auth Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction['id'] }}</td>
+                    <td><a href="{{ url_for('terminal_detail', terminal_id=transaction['terminal_id']) }}">{{ transaction['terminal_id'] }}</a></td>
+                    <td>{{ transaction['response_code'] }}</td>
+                    <td>{{ transaction['date_time'] }}</td>
+                    <td>{{ transaction['auth_code'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {{ pagination.links }}
+    </div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    background: linear-gradient(to top right, #c5dfe8 0%, #526f79 100%);
+    color: white;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 85%;
+    margin: 20px auto 0; /* Górny margines 20px, automatyczne wyśrodkowanie */
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    color: #f0f0f0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Efekt cienia dla nagłówka */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Roboto', sans-serif;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);  /* Dodanie cienia do tabeli */
+    border-radius: 8px;  /* Zaokrąglone rogi tabeli */
+    overflow: hidden;  /* Aby zaokrąglone rogi były widoczne */
+}
+
+th, td {
+    border: 1px solid white;
+    padding: 12px;
+    text-align: left;
+    background-color: rgba(255, 255, 255, 0.1);  /* Jasniejsze tło dla komórek */
+    color: white;  /* Kolor tekstu biały */
+    border-radius: 4px; /* Zaokrąglone rogi komórek */
+}
+
+th {
+    background-color: rgba(0, 0, 0, 0.1);  /* Tło nagłówków */
+    text-transform: uppercase;  /* Wersaliki dla nagłówków */
+    letter-spacing: 1px;  /* Zwiększona odległość między literami */
+    color: #ffffff;  /* Biały kolor tekstu dla lepszej widoczności */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Efekt cienia dla tekstu nagłówka */
+}
+
+tr:nth-child(even) td {
+    background-color: rgba(255, 255, 255, 0.2);  /* Alternatywne kolory wierszy */
+}
+
+a {
+    color: white;
+    text-decoration: none;
+    font-family: 'Roboto', sans-serif;
+    transition: color 0.3s ease;  /* Płynne przejście koloru */
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #f0f0f0;  /* Jaśniejszy kolor tekstu przy najechaniu */
+}
+
+th, td {
+    border: none;
+}
+
+td {
+    transition: background-color 0.3s ease;  /* Płynne przejście tła komórek */
+}
+
+td:hover {
+    background-color: rgba(255, 255, 255, 0.2);  /* Zmiana tła komórek przy najechaniu */
+}

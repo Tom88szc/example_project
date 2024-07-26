@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transaction Monitoring</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function reload() {
+            window.location.reload();
+        }
+        setInterval(reload, 10000);  // Refresh every 10 seconds
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Transaction Monitoring</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Process Name</th>
+                    <th>Total</th>
+                    <th>000</th>
+                    <th>001</th>
+                    <th>066</th>
+                    <th>096</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>All Processes</td>
+                    <td>{{ totals.total }}</td>
+                    <td>{{ totals['000'] }}</td>
+                    <td>{{ totals['001'] }}</td>
+                    <td>{{ totals['066'] }}</td>
+                    <td>{{ totals['096'] }}</td>
+                </tr>
+                {% for process in processes %}
+                <tr>
+                    <td><a href="{{ url_for('process_detail', process_id=loop.index) }}">{{ process[0] }}</a></td>
+                    <td>{{ process[1] }}</td>
+                    <td>{{ process[2] }}</td>
+                    <td>{{ process[3] }}</td>
+                    <td>{{ process[4] }}</td>
+                    <td>{{ process[5] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
