@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Transaction Monitoring</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3y5KzgAGC/T1TffQsyRMN9Gh3nkdG7tqrSw" crossorigin="anonymous">
     <script>
         function reload() {
             window.location.reload();
@@ -66,8 +67,18 @@
             }
         }
 
+        function displayInfo(event) {
+            const info = event.target.getAttribute('data-info');
+            if (info) {
+                alert(info); // You can replace this with a more sophisticated modal or tooltip.
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             highlightNumbers();
+            document.querySelectorAll('.fa-info-circle').forEach(icon => {
+                icon.addEventListener('click', displayInfo);
+            });
         });
     </script>
 </head>
@@ -89,29 +100,30 @@
                 <tr>
                     <th>Process Name</th>
                     <th>Total</th>
-                    <th>000</th>
-                    <th>001</th>
-                    <th>066</th>
-                    <th>096</th>
+                    {% for code in response_codes %}
+                        <th>{{ code }}</th>
+                    {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>All Processes</td>
-                    <td>{{ totals.total }}</td>
-                    <td>{{ totals['000'] }}</td>
-                    <td>{{ totals['001'] }}</td>
-                    <td>{{ totals['066'] }}</td>
-                    <td>{{ totals['096'] }}</td>
+                    <td>{{ totals['total'] }}</td>
+                    {% for code in response_codes %}
+                        <td>
+                            <i class="fa fa-info-circle" data-info="{{ code }}: {{ totals[code] }}"></i>
+                        </td>
+                    {% endfor %}
                 </tr>
                 {% for process in processes %}
                 <tr>
                     <td><a href="{{ url_for('process_detail', process_id=loop.index) }}">{{ process[0] }}</a></td>
                     <td>{{ process[1] }}</td>
-                    <td>{{ process[2] }}</td>
-                    <td>{{ process[3] }}</td>
-                    <td>{{ process[4] }}</td>
-                    <td>{{ process[5] }}</td>
+                    {% for code in response_codes %}
+                        <td>
+                            <i class="fa fa-info-circle" data-info="{{ code }}: {{ process[loop.index + 1] }}"></i>
+                        </td>
+                    {% endfor %}
                 </tr>
                 {% endfor %}
             </tbody>
