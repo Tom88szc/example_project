@@ -67,26 +67,37 @@ def index():
 
         # Calculate counts and totals
         process_counts = {}
+        response_codes = set()  # Collect all unique response codes
         for transaction in transactions:
             process_id = transaction['process_id']
             response_code = transaction['response_code']
+            response_codes.add(response_code)  # Add response code to the set
             if process_id not in process_counts:
-                process_counts[process_id] = {'total': 0, '000': 0, '001': 0, '066': 0, '096': 0}
+                process_counts[process_id] = {'total': 0}
             process_counts[process_id]['total'] += 1
-            if response_code in process_counts[process_id]:
-                process_counts[process_id][response_code] += 1
+            if response_code not in process_counts[process_id]:
+                process_counts[process_id][response_code] = 0
+            process_counts[process_id][response_code] += 1
+
+        # Convert response_codes to a sorted list
+        response_codes = sorted(response_codes)
 
         # Prepare process data for rendering
         process_data = []
         for process in processes:
             pid = process['id']
-            counts = process_counts.get(pid, {'total': 0, '000': 0, '001': 0, '066': 0, '096': 0})
-            process_data.append((process['name'], counts['total'], counts['000'], counts['001'], counts['066'], counts['096']))
+            counts = process_counts.get(pid, {'total': 0})
+            row = [process['name'], counts.get('total', 0)]
+            for code in response_codes:
+                row.append(counts.get(code, 0))
+            process_data.append(row)
 
         # Calculate totals
-        totals = {key: sum(counts[key] for counts in process_counts.values()) for key in ['total', '000', '001', '066', '096']}
+        totals = {'total': sum(counts.get('total', 0) for counts in process_counts.values())}
+        for code in response_codes:
+            totals[code] = sum(counts.get(code, 0) for counts in process_counts.values())
 
-        return render_template('index.html', processes=process_data, totals=totals)
+        return render_template('index.html', processes=process_data, totals=totals, response_codes=response_codes)
     except Exception as e:
         return str(e), 500
 
