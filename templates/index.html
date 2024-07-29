@@ -9,9 +9,79 @@
             window.location.reload();
         }
         setInterval(reload, 10000);  // Refresh every 10 seconds
+
+        function highlightNumbers() {
+            const rows = document.querySelectorAll('tbody tr');
+            const processNames = Array.from(document.querySelectorAll('tbody tr td:first-child')).map(td => td.textContent.trim());
+            let spdh20Missing = !processNames.includes('SPDH20');
+            let hisoMissing = !processNames.includes('HISO');
+
+            rows.forEach(row => {
+                const totalCell = row.cells[1];
+                const code000Cell = row.cells[2];
+                const code001Cell = row.cells[3];
+                const processCell = row.cells[0].querySelector('a');
+
+                const total = parseInt(totalCell.textContent);
+                const code000 = parseInt(code000Cell.textContent);
+                const code001 = parseInt(code001Cell.textContent);
+
+                if (total > (code000 + code001)) {
+                    row.classList.add('highlight-text');
+                }
+
+                if (total === 0) {
+                    row.classList.add('highlight-red');
+                }
+            });
+
+            const tbody = document.querySelector('tbody');
+
+            if (spdh20Missing) {
+                const row = document.createElement('tr');
+                row.classList.add('highlight-red');
+                row.innerHTML = `
+                    <td>SPDH20</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            if (hisoMissing) {
+                const row = document.createElement('tr');
+                row.classList.add('highlight-red');
+                row.innerHTML = `
+                    <td>HISO</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            highlightNumbers();
+        });
     </script>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <ul class="navbar-menu">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
     <div class="container">
         <h1>Transaction Monitoring</h1>
         <table>

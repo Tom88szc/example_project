@@ -2,82 +2,124 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: 'Roboto', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background-color: #0d1117;
+    color: #c9d1d9;
 }
 
 body {
-    background: linear-gradient(to top right, #c5dfe8 0%, #526f79 100%);
-    color: white;
     margin: 0;
-    padding: 20px;
+    padding: 20px 0; /* Zaktualizowane, aby uwzględnić navbar */
+}
+
+.navbar {
+    width: 100%;
+    background-color: #161b22;
+    border-bottom: 1px solid #30363d;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.navbar-container {
+    display: flex;
+    align-items: center;
+    max-width: 90%;
+    margin: 0 auto;
+    padding: 10px 0;
+}
+
+.navbar-menu {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar-menu li {
+    margin-right: 20px; /* Zmiana z left na right dla pierwszego elementu */
+}
+
+.navbar-menu a {
+    color: #c9d1d9;
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.3s ease;
+}
+
+.navbar-menu a:hover {
+    color: #58a6ff;
 }
 
 .container {
     width: 100%;
-    max-width: 85%;
-    margin: 20px auto 0; /* Górny margines 20px, automatyczne wyśrodkowanie */
+    max-width: 90%;
+    margin: 60px auto 0; /* Zaktualizowane, aby uwzględnić navbar */
     padding: 20px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     text-align: center;
 }
 
 h1 {
-    text-transform: uppercase;
-    letter-spacing: 2px;
+    font-size: 24px;
+    font-weight: 600;
     margin-bottom: 20px;
-    color: #f0f0f0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Efekt cienia dla nagłówka */
+    color: #c9d1d9;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'Roboto', sans-serif;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);  /* Dodanie cienia do tabeli */
-    border-radius: 8px;  /* Zaokrąglone rogi tabeli */
-    overflow: hidden;  /* Aby zaokrąglone rogi były widoczne */
+    margin-top: 20px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 th, td {
-    border: 1px solid white;
     padding: 12px;
     text-align: left;
-    background-color: rgba(255, 255, 255, 0.1);  /* Jasniejsze tło dla komórek */
-    color: white;  /* Kolor tekstu biały */
-    border-radius: 4px; /* Zaokrąglone rogi komórek */
+    border-bottom: 1px solid #30363d;
 }
 
 th {
-    background-color: rgba(0, 0, 0, 0.1);  /* Tło nagłówków */
-    text-transform: uppercase;  /* Wersaliki dla nagłówków */
-    letter-spacing: 1px;  /* Zwiększona odległość między literami */
-    color: #ffffff;  /* Biały kolor tekstu dla lepszej widoczności */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Efekt cienia dla tekstu nagłówka */
+    background-color: #21262d;
+    font-weight: 600;
+    color: #c9d1d9;
 }
 
 tr:nth-child(even) td {
-    background-color: rgba(255, 255, 255, 0.2);  /* Alternatywne kolory wierszy */
+    background-color: #161b22;
+}
+
+tr:hover td {
+    background-color: #30363d;
 }
 
 a {
-    color: white;
+    color: #58a6ff;
     text-decoration: none;
-    font-family: 'Roboto', sans-serif;
-    transition: color 0.3s ease;  /* Płynne przejście koloru */
 }
 
 a:hover {
     text-decoration: underline;
-    color: #f0f0f0;  /* Jaśniejszy kolor tekstu przy najechaniu */
 }
 
 th, td {
     border: none;
+    transition: background-color 0.3s ease;
 }
 
-td {
-    transition: background-color 0.3s ease;  /* Płynne przejście tła komórek */
+.highlight-text {
+    color: #ffcc00 !important; /* Jasno pomarańczowy */
 }
 
-td:hover {
-    background-color: rgba(255, 255, 255, 0.2);  /* Zmiana tła komórek przy najechaniu */
+.highlight-red {
+    color: #ff0000 !important; /* Czerwony */
 }
