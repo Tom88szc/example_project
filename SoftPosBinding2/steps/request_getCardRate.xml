@@ -1,0 +1,12 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="https://wtx.n-test.polcard.com.pl/pos/dcc/v1/SoftPosBinding">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <v1:GetCardRateRequest>
+            <ReferenceNumber>{{ReferenceNumber}}</ReferenceNumber>
+            <CardId>{{CardId}}</CardId>
+            <MerchantId>{{MerchantId}}</MerchantId>
+            <Acquirer>{{Acquirer}}</Acquirer>
+            <BaseAmount>{{BaseAmount}}</BaseAmount>
+        </v1:GetCardRateRequest>
+    </soapenv:Body>
+</soapenv:Envelope>
