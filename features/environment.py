@@ -15,6 +15,7 @@ def _setup_logging() -> None:
     )
 
 
+
 def _load_config() -> BnetClientConfig:
     return BnetClientConfig(
         env=os.getenv("ENV", "SIT"),
