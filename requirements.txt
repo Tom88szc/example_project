@@ -1,5 +1,1 @@
-pytest
-pytest-bdd
-requests
-pyyaml
-lxml
+behave==1.2.6
