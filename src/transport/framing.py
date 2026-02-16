@@ -81,12 +81,12 @@ class Length2RawFraming:
                 return b""
             return _recv_exact(sock, length)
 
+        def _recv_exact(sock, n: int) -> bytes:
+            data = b""
+            while len(data) < n:
+                chunk = sock.recv(n - len(data))
+                if not chunk:
+                    raise ConnectionError("Socket closed while receiving data")
+                data += chunk
+            return data
 
-    def _recv_exact(sock, n: int) -> bytes:
-        buf = b""
-        while len(buf) < n:
-            chunk = sock.recv(n - len(buf))
-            if not chunk:
-                raise ConnectionError("Socket closed while reading")
-            buf += chunk
-        return buf

@@ -1,144 +1,167 @@
 from __future__ import annotations
-# In-memory store of authorizations by RRN (DE037)
-AUTH_STORE = {}
-
 
 import json
 import logging
-import os
 import socket
 import threading
-import time
-from typing import Dict, Tuple, Optional
+from typing import Dict, Any
 
-HOST = os.getenv("BN_MOCK_HOST", "127.0.0.1")
-PORT = int(os.getenv("BN_MOCK_PORT", "5000"))
-HEARTBEAT_SECONDS = float(os.getenv("BN_HEARTBEAT_SECONDS", "2.0"))
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
 log = logging.getLogger("server.tcp_server")
 
 
-def _recv_exact(conn: socket.socket, n: int, timeout: Optional[float] = None) -> bytes:
-    if timeout is not None:
-        conn.settimeout(timeout)
-    buf = b""
-    while len(buf) < n:
-        chunk = conn.recv(n - len(buf))
+# ==========================
+# 2-byte length framing
+# ==========================
+
+def _recv_exact(sock: socket.socket, n: int) -> bytes:
+    data = b""
+    while len(data) < n:
+        chunk = sock.recv(n - len(data))
         if not chunk:
-            raise ConnectionError("Client disconnected")
-        buf += chunk
-    return buf
+            raise ConnectionError("Socket closed while receiving data")
+        data += chunk
+    return data
 
 
-def _recv_frame_2b(conn: socket.socket, timeout: Optional[float] = None) -> Optional[Dict]:
-    try:
-        prefix = _recv_exact(conn, 2, timeout=timeout)
-    except (socket.timeout, ConnectionError):
-        return None
-    length = int.from_bytes(prefix, "big", signed=False)
-    if length == 0:
-        return None
-    payload = _recv_exact(conn, length, timeout=timeout)
-    return json.loads(payload.decode("utf-8", errors="replace"))
+def receive_message(sock: socket.socket) -> Dict[str, Any]:
+    header = _recv_exact(sock, 2)
+    length = int.from_bytes(header, byteorder="big")
+    payload = _recv_exact(sock, length)
+    return json.loads(payload.decode("utf-8"))
 
 
-def _send_frame_2b(conn: socket.socket, msg: Dict) -> None:
-    payload = json.dumps(msg, ensure_ascii=False).encode("utf-8")
-    length = len(payload)
-    conn.sendall(length.to_bytes(2, "big") + payload)
+def send_message(sock: socket.socket, msg: Dict[str, Any]) -> None:
+    payload = json.dumps(msg).encode("utf-8")
+    header = len(payload).to_bytes(2, byteorder="big")
+    sock.sendall(header + payload)
 
 
-def _heartbeat_loop(conn: socket.socket, stop: threading.Event) -> None:
-    # Optional heartbeat (application-level). For demo we keep sending small JSON ping.
-    while not stop.is_set():
-        time.sleep(HEARTBEAT_SECONDS)
+# ==========================
+# Server logic
+# ==========================
+
+class TcpServer:
+
+    def __init__(self, host: str = "127.0.0.1", port: int = 5000):
+        self.host = host
+        self.port = port
+        self._auth_store: Dict[str, Dict[str, Any]] = {}
+        self._stop_event = threading.Event()
+
+    def start(self) -> None:
+        log.info("Starting TCP server on %s:%s", self.host, self.port)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+            srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            srv.bind((self.host, self.port))
+            srv.listen(5)
+            srv.settimeout(0.5)
+
+            while not self._stop_event.is_set():
+                try:
+                    conn, addr = srv.accept()
+                except socket.timeout:
+                    continue
+
+                log.info("Client connected: %s:%s", addr[0], addr[1])
+                thread = threading.Thread(
+                    target=self._client_loop,
+                    args=(conn, addr),
+                    daemon=True,
+                )
+                thread.start()
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    # ==========================
+
+    def _client_loop(self, conn: socket.socket, addr) -> None:
         try:
-            _send_frame_2b(conn, {"MTI": "0800", "DE070": "001"})  # mock heartbeat request
-        except Exception:
-            return
+            while True:
+                try:
+                    msg = receive_message(conn)
+                except ConnectionError:
+                    break
+                except OSError:
+                    break
 
+                log.info("RX: %s", msg)
 
-def handle_client(conn: socket.socket, addr: Tuple[str, int]) -> None:
-    stop = threading.Event()
-    hb = threading.Thread(target=_heartbeat_loop, args=(conn, stop), daemon=True)
-    hb.start()
-    try:
-        while True:
-            msg = _recv_frame_2b(conn, timeout=0.5)
-            if msg is None:
-                continue
+                response = self._handle_message(msg)
 
-            log.info("RX: %s", msg)
+                log.info("TX: %s", response)
+                send_message(conn, response)
 
-            mti = msg.get("MTI")
-rrn = msg.get("DE037")
-if mti == "0100" and rrn:
-    AUTH_STORE[rrn] = {"request": dict(msg)}
-            if mti == "0800":
-                resp = {"MTI": "0810", "DE039": "00", "ECHO": msg}
-            elif mti == "0100":
-                resp = {"MTI": "0110", "DE039": "00", "DE038": "AUTH123", "ECHO": msg}
-elif mti == "0400":
-    rrn = msg.get("DE037")
-    if rrn and rrn in AUTH_STORE:
-        # optional: update stored reversal info
-        AUTH_STORE[rrn]["reversal"] = dict(msg)
-        response = {"MTI": "0410", "DE039": "00", "ECHO": msg}
-    else:
-        response = {"MTI": "0410", "DE039": "25", "ECHO": msg}
-
-            else:
-                resp = {"MTI": "9999", "DE039": "96", "ECHO": msg}
-
-            log.info("TX: %s", resp)
-            _send_frame_2b(conn, resp)
-    except ConnectionError:
-        pass
-    except Exception as e:
-        log.exception("Client handler error: %s", e)
-    finally:
-        stop.set()
-        try:
+        finally:
             conn.close()
-        except Exception:
-            pass
-        log.info("Client disconnected: %s:%s", addr[0], addr[1])
+            log.info("Client disconnected: %s:%s", addr[0], addr[1])
+
+    # ==========================
+
+    def _handle_message(self, msg: Dict[str, Any]) -> Dict[str, Any]:
+        mti = str(msg.get("MTI", ""))
+
+        # 0800 -> 0810
+        if mti == "0800":
+            return {
+                "MTI": "0810",
+                "DE039": "00",
+                "ECHO": msg,
+            }
+
+        # 0100 -> 0110 (Authorization)
+        if mti == "0100":
+            rrn = msg.get("DE037")
+            if rrn:
+                self._auth_store[str(rrn)] = msg
+
+            return {
+                "MTI": "0110",
+                "DE039": "00",
+                "DE038": "AUTH123",
+                "ECHO": msg,
+            }
+
+        # 0400 -> 0410 (Reversal)
+        if mti == "0400":
+            rrn = msg.get("DE037")
+
+            if rrn and str(rrn) in self._auth_store:
+                return {
+                    "MTI": "0410",
+                    "DE039": "00",
+                    "ECHO": msg,
+                }
+            else:
+                return {
+                    "MTI": "0410",
+                    "DE039": "25",  # no original found
+                    "ECHO": msg,
+                }
+
+        # default echo
+        return {
+            "MTI": mti[:-1] + "10" if len(mti) == 4 else "9999",
+            "DE039": "00",
+            "ECHO": msg,
+        }
 
 
-def serve() -> None:
-    log.info("Starting TCP mock server on %s:%s (HB every %.1fs) [2B length framing]", HOST, PORT, HEARTBEAT_SECONDS)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((HOST, PORT))
-        s.listen(5)
-        while True:
-            conn, addr = s.accept()
-            log.info("Client connected: %s:%s", addr[0], addr[1])
-            t = threading.Thread(target=handle_client, args=(conn, addr), daemon=True)
-            t.start()
-
+# ==========================
+# Run standalone
+# ==========================
 
 if __name__ == "__main__":
-    serve()
-
-
-
-# --- Optional RAW 2B framing helpers (for future ISO8583 bytes payload) ---
-        def _recv_exact(sock, n: int) -> bytes:
-            buf = b""
-            while len(buf) < n:
-                chunk = sock.recv(n - len(buf))
-                if not chunk:
-                    return b""
-                buf += chunk
-            return buf
-
-        def recv_len2_payload(sock) -> bytes:
-            prefix = _recv_exact(sock, 2)
-            if not prefix or len(prefix) < 2:
-                return b""
-            length = int.from_bytes(prefix, "big")
-            if length == 0:
-                return b""
-            return _recv_exact(sock, length)
+    server = TcpServer()
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        server.stop()
+        log.info("Server stopped")

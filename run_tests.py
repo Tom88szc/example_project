@@ -33,14 +33,15 @@ def main() -> int:
     exit_code = behave_main()
 
     # Generate HTML report even if tests failed
-    try:
-    except Exception as e:
-        # Never break the test run due to reporting issues
-        print(f"[REPORT] Failed to generate HTML report: {e}")
-
-        if server is not None:
-        server.stop()
-    return exit_code
+    # try:
+    #     pass
+    # except Exception as e:
+    #     # Never break the test run due to reporting issues
+    #     print(f"[REPORT] Failed to generate HTML report: {e}")
+    #
+    #     if server is not None:
+    #     server.stop()
+    # return exit_code
 
 if __name__ == "__main__":
     raise SystemExit(main())
