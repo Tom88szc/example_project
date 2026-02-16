@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict
 
 from src.client.bnet_client import BnetClient, BnetClientConfig
 
@@ -9,11 +13,7 @@ from src.client.bnet_client import BnetClient, BnetClientConfig
 def _setup_logging() -> None:
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    )
-
+    logging.basicConfig(level=level, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
 
 def _load_config() -> BnetClientConfig:
@@ -23,62 +23,60 @@ def _load_config() -> BnetClientConfig:
         port=int(os.getenv("BN_PORT", "5000")),
         connect_timeout=float(os.getenv("BN_CONNECT_TIMEOUT", "5")),
         read_timeout=float(os.getenv("BN_READ_TIMEOUT", "10")),
-        retries=int(os.getenv("BN_RETRIES", "1")),
-        retry_backoff=float(os.getenv("BN_RETRY_BACKOFF", "0.3")),
+        default_card_number=os.getenv("BN_DEFAULT_CARD", "5575061111100075"),
+        default_expiry_date=os.getenv("BN_DEFAULT_EXPIRY", "2907"),
     )
+
+
+def _slug(s: str) -> str:
+    import re
+    s = s.strip().lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    s = re.sub(r"-{2,}", "-", s).strip("-")
+    return s or "scenario"
 
 
 def before_all(context):
     _setup_logging()
-    log = logging.getLogger("behave.environment")
-    log.info("Starting Behave run...")
+    logging.getLogger("behave.environment").info("Starting Behave run...")
+    Path("reports/tcp").mkdir(parents=True, exist_ok=True)
 
     context.bnet_config = _load_config()
     context.bnet = BnetClient(config=context.bnet_config)
+    context.bnet.connect_and_login()
 
-    context.bnet_logged_in = False
+    # Default card (used if scenario doesn't provide card details)
+    context.card = {
+        "CARD_NUMBER": context.bnet_config.default_card_number,
+        "EXPIRY_DATE": context.bnet_config.default_expiry_date,
+    }
+
+    context.iso_fields = {}
     context.last_request = None
     context.last_response = None
-    context.iso_fields = {}
 
 
 def before_scenario(context, scenario):
-    log = logging.getLogger("behave.environment")
-    log.info("Scenario: %s", scenario.name)
+    logging.getLogger("behave.environment").info("Scenario: %s", scenario.name)
+    context._tcp_lines = []
+    slug = _slug(f"{scenario.feature.name}-{scenario.name}")
+    context._tcp_log_name = f"{slug}.log"
 
-    if "no-login" in scenario.tags:
-        log.info("Skipping login due to @no-login")
-        return
+    def sink(direction: str, msg: Dict[str, Any]) -> None:
+        ts = datetime.utcnow().strftime("%H:%M:%S.%f")[:-3] + "Z"
+        context._tcp_lines.append(f"{ts} {direction} {json.dumps(msg, ensure_ascii=False)}")
 
-    if getattr(context, "bnet_logged_in", False):
-        log.info("Already logged in - skipping login.")
-        return
-
-    context.bnet.login()
-    context.bnet_logged_in = True
+    context.bnet.set_event_sink(sink)
 
 
 def after_scenario(context, scenario):
-    log = logging.getLogger("behave.environment")
-
-    if "keep-session" in scenario.tags:
-        log.info("Keeping session due to @keep-session")
-        return
-
-    if getattr(context, "bnet_logged_in", False):
-        try:
-            context.bnet.logout()
-        finally:
-            context.bnet_logged_in = False
+    context.bnet.set_event_sink(None)
+    (Path("reports/tcp") / context._tcp_log_name).write_text("\n".join(context._tcp_lines) + "\n", encoding="utf-8")
 
 
 def after_all(context):
-    log = logging.getLogger("behave.environment")
-    log.info("Finishing Behave run...")
-
+    logging.getLogger("behave.environment").info("Finishing Behave run...")
     try:
-        if getattr(context, "bnet_logged_in", False):
-            context.bnet.logout()
-    finally:
-        context.bnet_logged_in = False
-        context.bnet.close()
+        context.bnet.logout_and_close()
+    except Exception:
+        pass

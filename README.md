@@ -1,47 +1,51 @@
-# bnet_iss_automation_sit (Behave + TCP/IP localhost server)
+# bnet_iss_enterprise_steps_project
 
-Ten projekt to szkielet automatyzacji w stylu BDD (Behave), gdzie testy wysyłają "transakcje" jako pola ISO (dict)
-do lokalnego serwera TCP (`localhost`) i walidują odpowiedź.
+Behave + TCP/IP ISO8583 mock (JSON line framing) + auto 0800->0810 + walidacje + HTML report (folder+assets, drill-down) + GitLab CI artifacts.
 
-## Struktura
-- `features/` – pliki `.feature`, hooki `environment.py`, kroki w `features/steps/`
-- `src/` – klient TCP i helpery (budowanie, wysyłka, walidacja)
-- `server/` – prosty serwer TCP do testów (mock systemu "bnet")
+## Key: step architecture (no conflicts)
+Read: `docs/STEP_ARCHITECTURE.md`  
+We also run a guard in CI/local: `python tools/check_steps_unique.py` to fail fast if any step text is duplicated.
 
-## Szybki start
-
-### 1) Instalacja
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-source .venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-### 2) Uruchom serwer TCP (w osobnym terminalu)
+## Run locally
+Terminal 1:
 ```bash
 python -m server.tcp_server
 ```
 
-Domyślnie serwer słucha na `127.0.0.1:5000`.
-
-### 3) Uruchom testy Behave
+Terminal 2:
 ```bash
-ENV=SIT BN_HOST=127.0.0.1 BN_PORT=5000 behave -f progress
+python run_tests.py
 ```
 
-## Protokół (dla testów)
-Klient wysyła jedną linię JSON zakończoną `\n`:
-```json
-{"MTI":"0100","DE002":"...","DE004":"000000000100", "...":"..."}
+Open report:
+- `reports/html/index.html`
+
+## Length prefix rule (2B)
+This project enforces: **2-byte length prefix exists ONLY in transport/framing**.
+- `BnetBinMessage` builds **payload bytes only** (no prefix).
+- `BnetParserMessage` parses **payload bytes only** (no prefix).
+- If you have an external builder that returns `HEX=[2B prefix][payload]`, use `ExternalBnetBinMessageAdapter` which strips the first 4 hex chars.
+
+## Server mode (SUT)
+This project can run with **SUT acting as the server** (TCP, 2B length + JSON payload).
+
+### Option A: Run server separately
+Terminal 1:
+```bash
+python run_sut_server.py
 ```
 
-Serwer odpowiada też jedną linią JSON zakończoną `\n`, np.:
-```json
-{"MTI":"0110","DE039":"00","ECHO":{"MTI":"0100",...}}
+Terminal 2:
+```bash
+python run_tests.py
 ```
 
-## Tagowanie scenariuszy
-- `@no-login` – pomija logowanie w hooku
-- `@keep-session` – utrzymuje sesję między scenariuszami
+### Option B: Auto-start server from run_tests.py
+Just run:
+```bash
+python run_tests.py
+```
+`run_tests.py` will try to start the server on `BN_HOST/BN_PORT`. If the port is already in use, it will continue and assume the server is already running.
+
+
+📘 See: `TESTING_GUIDE.md` for writing tests, placeholders and running instructions.

@@ -1,0 +1,72 @@
+stages:
+  - test:1
+  - test:2
+  - test:3
+  - test:4
+  - test:5
+  - test:6
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  BN_HOST: "127.0.0.1"
+  BN_PORT: "5000"
+  LOG_LEVEL: "INFO"
+
+cache:
+  paths:
+    - .cache/pip
+
+.test_template: &test_template
+  image: python:3.12
+  before_script:
+    - python --version
+    - pip install -r requirements.txt
+  script:
+    - python run_ci.py --location "$SCENARIO_LOC"
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - reports/
+
+tests.1:
+  stage: test:1
+  <<: *test_template
+  variables:
+    SCENARIO_LOC: "features/credential_on_file/credential_on_file.feature:6"
+    SCENARIO_NAME: "Transaction using provided card details"
+
+tests.2:
+  stage: test:2
+  <<: *test_template
+  variables:
+    SCENARIO_LOC: "features/credential_on_file/credential_on_file.feature:26"
+    SCENARIO_NAME: "Transaction using DEFAULT card (no card table provided)"
+
+tests.3:
+  stage: test:3
+  <<: *test_template
+  variables:
+    SCENARIO_LOC: "features/credential_on_file/credential_on_file.feature:40"
+    SCENARIO_NAME: "Negative - should fail (wrong expected value)"
+
+tests.4:
+  stage: test:4
+  <<: *test_template
+  variables:
+    SCENARIO_LOC: "features/credential_on_file/credential_on_file.feature:52"
+    SCENARIO_NAME: "Authorization + Reversal (auto DE090)"
+
+tests.5:
+  stage: test:5
+  <<: *test_template
+  variables:
+    SCENARIO_LOC: "features/credential_on_file/credential_on_file.feature:82"
+    SCENARIO_NAME: "Partial Reversal (smaller amount)"
+
+tests.6:
+  stage: test:6
+  <<: *test_template
+  variables:
+    SCENARIO_LOC: "features/credential_on_file/credential_on_file.feature:112"
+    SCENARIO_NAME: "Negative Reversal (no original found)"
