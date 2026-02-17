@@ -19,3 +19,13 @@ def step_validate(context):
 
     if mismatches:
         raise AssertionError("Mismatches:\n" + "\n".join(mismatches) + f"\nActual={actual}")
+
+
+@then("the response should contain fields")
+def step_response_should_contain_fields(context):
+    actual = context.last_response or {}
+    required_fields = [row["FIELD"] for row in context.table]
+
+    missing = [field for field in required_fields if field not in actual]
+    if missing:
+        raise AssertionError(f"Missing required fields: {missing}. Actual={actual}")
