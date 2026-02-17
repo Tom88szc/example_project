@@ -1,24 +1,23 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Any, Dict
+import json
+from typing import Dict, Any
 
 
-@dataclass
 class BnetBinMessage:
     """
-    Protocol layer (ISO8583) builder.
-    MUST return PAYLOAD bytes only (no 2-byte length prefix).
-    Length prefix is handled exclusively by transport/framing.
+    Builder layer.
+
+    IMPORTANT (architecture rule):
+    - Builds PAYLOAD only (WITHOUT the 2-byte length prefix).
+    - The 2-byte length prefix MUST be handled only by transport/framing.
+
+    Default implementation in this repo builds JSON payload bytes so the project runs out-of-the-box.
+    Replace the internals with real ISO8583 building (bitmap + DE building + cp500) when integrating
+    with the production protocol stack.
     """
-    fields: Dict[str, Any]
-    codec: str = "cp500"
 
-    def to_payload_bytes(self) -> bytes:
-        # TODO: Replace with real ISO8583 packing (MTI + bitmap + DE fields)
-        # Placeholder: MTI as EBCDIC 4 bytes.
-        mti = str(self.fields.get("MTI", ""))
-        return mti.encode(self.codec)
+    def __init__(self, fields: Dict[str, Any], encoding: str = "utf-8"):
+        self.fields = fields
+        self.encoding = encoding
 
-    def to_payload_hex(self) -> str:
-        return self.to_payload_bytes().hex().upper()
+    def to_bytes(self) -> bytes:
+        return json.dumps(self.fields, ensure_ascii=False).encode(self.encoding)

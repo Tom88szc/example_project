@@ -138,3 +138,25 @@ GitLab CI runs **each Scenario as a separate stage/job**.
 
 To add more tests, just add more `Scenario:` blocks in `.feature` files.
 The pipeline will automatically create additional stages/jobs.
+
+## Protocol integration (BnetParserMessage / BnetBinMessage)
+
+We introduced a stable integration point in:
+
+- `src/utils/protocol/bnet_parser_message.py` (parser)
+- `src/utils/protocol/bnet_bin_message.py` (builder)
+- `src/utils/protocol/iso8583_adapter.py` (adapter used by client/server)
+
+### Contract
+- Builder returns **payload bytes** (WITHOUT 2-byte length prefix)
+- Parser receives **payload bytes** (WITHOUT 2-byte length prefix)
+- 2-byte length prefix exists ONLY in `src/transport/framing.py`
+
+### Default behavior
+The default implementation uses JSON so the project runs immediately.
+When you integrate your real ISO8583 stack, replace the internals of parser/builder
+to handle bitmap + DE fields + cp500 encoding.
+
+
+## Python 3.12 notes
+This project is refactored for Python 3.12 and does not use `from __future__ import annotations`.

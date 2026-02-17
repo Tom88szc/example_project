@@ -1,28 +1,24 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Any, Dict
+import json
+from typing import Dict, Any
 
 
-@dataclass
 class BnetParserMessage:
     """
-    Protocol layer (ISO8583) parser.
-    MUST accept PAYLOAD bytes only (no 2-byte length prefix).
-    Length prefix is handled exclusively by transport/framing.
-    """
-    payload: bytes
-    codec: str = "cp500"
+    Parser layer.
 
-    @classmethod
-    def from_hex(cls, payload_hex: str, codec: str = "cp500") -> "BnetParserMessage":
-        return cls(bytes.fromhex(payload_hex), codec=codec)
+    IMPORTANT (architecture rule):
+    - Receives PAYLOAD only (WITHOUT the 2-byte length prefix).
+    - The 2-byte length prefix MUST be handled only by transport/framing.
+
+    Default implementation in this repo parses JSON payload into dict so the project runs out-of-the-box.
+    Replace the internals with real ISO8583 parsing (bitmap + DE parsing + cp500) when integrating
+    with the production protocol stack.
+    """
+
+    def __init__(self, payload: bytes, encoding: str = "utf-8"):
+        self.payload = payload
+        self.encoding = encoding
 
     def extract_fields(self) -> Dict[str, Any]:
-        # TODO: Replace with real ISO8583 parsing (MTI + bitmap + DE fields)
-        # Placeholder: decode first 4 bytes as MTI in EBCDIC.
-        if not self.payload:
-            return {"MTI": ""}
-        mti_bytes = self.payload[:4]
-        mti = mti_bytes.decode(self.codec, errors="replace")
-        return {"MTI": mti}
+        txt = self.payload.decode(self.encoding)
+        return json.loads(txt)

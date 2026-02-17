@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import socket
 from typing import Any, Dict, Optional
@@ -60,33 +58,31 @@ class Length2JsonFraming:
         return json.loads(payload.decode("utf-8", errors="replace"))
 
 
-
 class Length2RawFraming:
-        """2-byte big-endian length prefix framing for raw bytes payload."""
+    """2-byte big-endian length prefix framing for raw bytes payload."""
 
-        def send(self, sock, payload: bytes) -> None:
-            if payload is None:
-                payload = b""
-            length = len(payload)
-            if length > 0xFFFF:
-                raise ValueError(f"Payload too large for 2B length: {length}")
-            sock.sendall(length.to_bytes(2, "big") + payload)
+    def send(self, sock, payload: bytes) -> None:
+        if payload is None:
+            payload = b""
+        length = len(payload)
+        if length > 0xFFFF:
+            raise ValueError(f"Payload too large for 2B length: {length}")
+        sock.sendall(length.to_bytes(2, "big") + payload)
 
-        def receive(self, sock, timeout: float | None = None) -> bytes:
-            if timeout is not None:
-                sock.settimeout(timeout)
-            prefix = _recv_exact(sock, 2)
-            length = int.from_bytes(prefix, "big")
-            if length == 0:
-                return b""
-            return _recv_exact(sock, length)
+    def receive(self, sock, timeout: float | None = None) -> bytes:
+        if timeout is not None:
+            sock.settimeout(timeout)
+        prefix = _recv_exact(sock, 2)
+        length = int.from_bytes(prefix, "big")
+        if length == 0:
+            return b""
+        return _recv_exact(sock, length)
 
-        def _recv_exact(sock, n: int) -> bytes:
-            data = b""
-            while len(data) < n:
-                chunk = sock.recv(n - len(data))
-                if not chunk:
-                    raise ConnectionError("Socket closed while receiving data")
-                data += chunk
-            return data
-
+    def _recv_exact(sock, n: int) -> bytes:
+        buf = b""
+        while len(buf) < n:
+            chunk = sock.recv(n - len(buf))
+            if not chunk:
+                raise ConnectionError("Socket closed while reading")
+            buf += chunk
+        return buf

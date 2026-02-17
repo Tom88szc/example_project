@@ -49,3 +49,7 @@ python run_tests.py
 
 
 📘 See: `TESTING_GUIDE.md` for writing tests, placeholders and running instructions.
+
+
+## Python 3.12 notes
+This project is refactored for Python 3.12 and does not use `from __future__ import annotations`.

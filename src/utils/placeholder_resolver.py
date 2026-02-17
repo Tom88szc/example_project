@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Dict
 from src.utils.generators import gen_rrn, gen_stan, gen_trace_id
 

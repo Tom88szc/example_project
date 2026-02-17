@@ -1,4 +1,3 @@
-from __future__ import annotations
 import random, string
 from datetime import datetime
 
