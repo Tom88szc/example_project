@@ -34,6 +34,26 @@ class BnetBinMessage:
         full_hex = mti_hex + bitmap_hex + body_hex
         return bytes.fromhex(full_hex)
 
+    def to_bytes(self) -> bytes:
+        """
+        Backward-compatible alias used by adapter layer.
+        """
+        return self.build()
+
+    def create_message(self) -> str:
+        """
+        Returns message encoded as uppercase hex string (without length prefix).
+        """
+        return self.build().hex().upper()
+
+    def create_message_with_prefix(self) -> str:
+        """
+        Returns message encoded as uppercase hex string with 2-byte length prefix.
+        """
+        payload = self.build()
+        prefix = len(payload).to_bytes(2, "big")
+        return (prefix + payload).hex().upper()
+
     # ============================================================
     # BITMAP
     # ============================================================
