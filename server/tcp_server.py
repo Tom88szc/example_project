@@ -5,7 +5,7 @@ import threading
 from typing import Any, Dict, Optional
 
 from src.transport.framing import send_frame, recv_frame
-from src.protocol.iso8583_adapter import build_payload, parse_payload
+from src.utils.protocol.iso8583_adapter import build_payload, parse_payload
 
 HOST = "127.0.0.1"
 PORT = 5000
