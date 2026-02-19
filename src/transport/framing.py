@@ -1,6 +1,27 @@
 
 import socket
-from typing import Optional
+from typing import Optional, Union
+
+
+def _coerce_payload_bytes(payload: Union[bytes, bytearray, memoryview, str]) -> bytes:
+    """Normalize payload into bytes accepted by socket.sendall()."""
+    if isinstance(payload, bytes):
+        return payload
+
+    if isinstance(payload, (bytearray, memoryview)):
+        return bytes(payload)
+
+    if isinstance(payload, str):
+        # Debug paths often provide uppercase HEX text. Prefer HEX decoding first.
+        compact = "".join(payload.split())
+        if compact:
+            try:
+                return bytes.fromhex(compact)
+            except ValueError:
+                return payload.encode("utf-8")
+        return b""
+
+    raise TypeError(f"Unsupported payload type: {type(payload)!r}")
 
 
 def _recv_exact(sock: socket.socket, n: int, timeout: Optional[float] = None) -> bytes:
@@ -15,10 +36,11 @@ def _recv_exact(sock: socket.socket, n: int, timeout: Optional[float] = None) ->
     return data
 
 
-def send_frame(sock: socket.socket, payload: bytes) -> None:
+def send_frame(sock: socket.socket, payload: Union[bytes, bytearray, memoryview, str]) -> None:
     """Send payload with 2-byte big-endian length prefix."""
-    prefix = len(payload).to_bytes(2, "big")
-    sock.sendall(prefix + payload)
+    payload_bytes = _coerce_payload_bytes(payload)
+    prefix = len(payload_bytes).to_bytes(2, "big")
+    sock.sendall(prefix + payload_bytes)
 
 
 def recv_frame(sock: socket.socket, timeout: Optional[float] = None) -> Optional[bytes]:
