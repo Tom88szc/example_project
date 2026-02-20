@@ -11,4 +11,6 @@ def parse_payload(payload: bytes) -> Dict[str, Any]:
 
 def build_payload(fields: Dict[str, Any]) -> bytes:
     """Build payload bytes (WITHOUT 2B length) from fields dict."""
-    return BnetBinMessage(fields).to_bytes()
+    bin_message = BnetBinMessage(fields)
+    encoded_message = bytes.fromhex(bin_message.create_message_with_prefix())
+    return encoded_message
