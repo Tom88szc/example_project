@@ -6,7 +6,11 @@ from src.utils.protocol.bnet_bin_message import BnetBinMessage
 
 def parse_payload(payload: bytes) -> Dict[str, Any]:
     """Parse payload bytes (WITHOUT 2B length) into fields dict."""
-    return BnetParserMessage(payload).extract_fields()
+    hex_data = payload.hex()
+    hex_data_trimmed = hex_data[4:]
+    bnet = BnetParserMessage(hex_data_trimmed)
+    recv_message = bnet.extract_fields()
+    return recv_message
 
 
 def build_payload(fields: Dict[str, Any]) -> bytes:
