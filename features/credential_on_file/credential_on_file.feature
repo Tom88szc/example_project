@@ -24,6 +24,9 @@ Feature: CREDENTIAL ON FILE BASIC TRANSACTIONS
       | DE039 | 00             |
 
   Scenario: Transaction using DEFAULT card (no card table provided)
+    Given the card details
+      | CARD_NUMBER        | PVV   | EXPIRY_DATE |
+      | 5575061111100075   | 12345 | 2907        |
     Given the transaction with the following data
       | FIELD | VALUE         |
       | MTI   | 0100          |
@@ -38,6 +41,9 @@ Feature: CREDENTIAL ON FILE BASIC TRANSACTIONS
       | DE039 |
 
   Scenario: Negative - should fail (wrong expected value)
+    Given the card details
+      | CARD_NUMBER        | PVV   | EXPIRY_DATE |
+      | 5575061111100075   | 12345 | 2907        |
     Given the transaction with the following data
       | FIELD | VALUE        |
       | MTI   | 0100         |
@@ -50,6 +56,9 @@ Feature: CREDENTIAL ON FILE BASIC TRANSACTIONS
       | DE039 | 05             |
 
 Scenario: Authorization + Reversal (auto DE090)
+  Given the card details
+    | CARD_NUMBER        | PVV   | EXPIRY_DATE |
+    | 5575061111100075   | 12345 | 2907        |
   Given the transaction with the following data
     | FIELD | VALUE        |
     | MTI   | 0100         |
@@ -80,6 +89,9 @@ Scenario: Authorization + Reversal (auto DE090)
     | DE039 | 00             |
 
 Scenario: Partial Reversal (smaller amount)
+  Given the card details
+    | CARD_NUMBER        | PVV   | EXPIRY_DATE |
+    | 5575061111100075   | 12345 | 2907        |
   Given the transaction with the following data
     | FIELD | VALUE        |
     | MTI   | 0100         |
@@ -110,6 +122,9 @@ Scenario: Partial Reversal (smaller amount)
     | DE039 | 00             |
 
 Scenario: Negative Reversal (no original found)
+  Given the card details
+    | CARD_NUMBER        | PVV   | EXPIRY_DATE |
+    | 5575061111100075   | 12345 | 2907        |
   Given the transaction with the following data
     | FIELD | VALUE        |
     | MTI   | 0400         |
@@ -123,4 +138,3 @@ Scenario: Negative Reversal (no original found)
     | FIELD | EXPECTED_VALUE |
     | MTI   | 0410           |
     | DE039 | 25             |
-
