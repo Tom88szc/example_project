@@ -5,8 +5,8 @@ Feature: CREDENTIAL ON FILE BASIC TRANSACTIONS
 
   Scenario: Transaction using provided card details
     Given the card details
-      | CARD_NUMBER        | EXPIRY_DATE |
-      | 5575061111100075   | 2907        |
+      | CARD_NUMBER        | PVV   | EXPIRY_DATE |
+      | 5575061111100075   | 12345 | 2907        |
     Given the transaction with the following data
       | FIELD | VALUE         |
       | MTI   | 0100          |

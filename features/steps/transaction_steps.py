@@ -13,6 +13,8 @@ def _build_placeholder_context(context):
     extra = {
         "CARD": card.get("CARD_NUMBER", ""),
         "EXPIRY_DATE": card.get("EXPIRY_DATE", ""),
+        "PVV": card.get("PVV", ""),
+        "PvV": card.get("PVV", ""),
     }
 
     # Prefer values from response, fallback to saved authorization request.
