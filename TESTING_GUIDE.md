@@ -73,6 +73,8 @@ Scenario: Authorization happy path
 | `{TRACE_ID}` | generates trace id |
 | `{CARD}` | card number from `the card details` step |
 | `{EXPIRY_DATE}` | expiry date from `the card details` step |
+| `{PVV}` | PVV from `the card details` step |
+| `{PvV}` | alias for `{PVV}` (legacy mixed-case usage) |
 
 ### Copy from last authorization (after saving auth context)
 After step:
