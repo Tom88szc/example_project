@@ -2,7 +2,7 @@
 # BNET ISO8583 Test Framework (Full Working Project)
 
 This project is a **runnable baseline** that keeps the correct architecture:
-- 2-byte length prefix handled ONLY in `src/transport/framing.py`
+- transport sends/receives raw payload bytes (no 2-byte length prefix)
 - Protocol integration point is `src/protocol` (BnetBinMessage/BnetParserMessage)
 - Behave tests in `features/`
 

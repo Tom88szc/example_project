@@ -23,16 +23,25 @@ def _coerce_payload_bytes(payload: Union[bytes, bytearray, memoryview, str]) -> 
     raise TypeError(f"Unsupported payload type: {type(payload)!r}")
 
 
-def _recv_exact(sock: socket.socket, n: int, timeout: Optional[float] = None) -> bytes:
+def send_frame(sock: socket.socket, payload: Union[bytes, bytearray, memoryview, str]) -> None:
+    """Send raw payload bytes (without adding a 2-byte length prefix)."""
+    payload_bytes = _coerce_payload_bytes(payload)
+    sock.sendall(payload_bytes)
+
+
+def recv_frame(
+    sock: socket.socket,
+    timeout: Optional[float] = None,
+    buffer_size: int = 8192,
+) -> Optional[bytes]:
+    """Receive raw payload bytes (without consuming a 2-byte length prefix)."""
     if timeout is not None:
         sock.settimeout(timeout)
-    data = b""
-    while len(data) < n:
-        chunk = sock.recv(n - len(data))
-        if not chunk:
-            raise ConnectionError("Socket closed while receiving data")
-        data += chunk
-    return data
 
-def send_frame(sock: socket.socket, payload: Union[bytes, bytearray, memoryview, str]) -> None:
-    """Send payload with 2-byte big-endian length prefix."""
+    try:
+        data = sock.recv(buffer_size)
+        if not data:
+            return None
+        return data
+    except (OSError, socket.timeout):
+        return None
