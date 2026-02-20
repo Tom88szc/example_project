@@ -11,7 +11,6 @@ def _coerce_payload_bytes(payload: Union[bytes, bytearray, memoryview, str]) -> 
         return bytes(payload)
 
     if isinstance(payload, str):
-        # Debug paths often provide uppercase HEX text. Prefer HEX decoding first.
         compact = "".join(payload.split())
         if compact:
             try:
@@ -23,8 +22,19 @@ def _coerce_payload_bytes(payload: Union[bytes, bytearray, memoryview, str]) -> 
     raise TypeError(f"Unsupported payload type: {type(payload)!r}")
 
 
+def _recv_exact(sock: socket.socket, size: int) -> Optional[bytes]:
+    """Receive exactly `size` bytes or return None if connection closes/timeouts."""
+    chunks = bytearray()
+    while len(chunks) < size:
+        part = sock.recv(size - len(chunks))
+        if not part:
+            return None
+        chunks.extend(part)
+    return bytes(chunks)
+
+
 def send_frame(sock: socket.socket, payload: Union[bytes, bytearray, memoryview, str]) -> None:
-    """Send raw payload bytes (without adding a 2-byte length prefix)."""
+    """Send payload as-is (payload already contains 2-byte length prefix)."""
     payload_bytes = _coerce_payload_bytes(payload)
     sock.sendall(payload_bytes)
 
@@ -34,14 +44,21 @@ def recv_frame(
     timeout: Optional[float] = None,
     buffer_size: int = 8192,
 ) -> Optional[bytes]:
-    """Receive raw payload bytes (without consuming a 2-byte length prefix)."""
+    """Receive one full frame using 2-byte length prefix and return [prefix+payload]."""
+    del buffer_size
     if timeout is not None:
         sock.settimeout(timeout)
 
     try:
-        data = sock.recv(buffer_size)
-        if not data:
+        prefix = _recv_exact(sock, 2)
+        if prefix is None:
             return None
-        return data
+
+        body_len = int.from_bytes(prefix, "big")
+        body = _recv_exact(sock, body_len)
+        if body is None:
+            return None
+
+        return prefix + body
     except (OSError, socket.timeout):
         return None
