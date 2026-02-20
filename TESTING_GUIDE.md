@@ -4,8 +4,8 @@
 This repository contains a Behave (BDD) test client and a TCP SUT server implementation.
 
 - **Behave** runs scenarios from `features/`
-- **SUT Server** listens on TCP and responds to ISO-like messages (currently JSON payload) using **2-byte length prefix framing**
-- **Transport/Framing rule:** the 2-byte length prefix exists **only** in `src/transport/framing.py`
+- **SUT Server** listens on TCP and responds to ISO-like messages (currently JSON payload) using raw payload messages (no length-prefix framing)
+- **Transport/Framing rule:** transport sends and receives raw payload bytes (no 2-byte prefix)
 
 ---
 
@@ -150,7 +150,7 @@ We introduced a stable integration point in:
 ### Contract
 - Builder returns **payload bytes** (WITHOUT 2-byte length prefix)
 - Parser receives **payload bytes** (WITHOUT 2-byte length prefix)
-- 2-byte length prefix exists ONLY in `src/transport/framing.py`
+- No 2-byte length prefix is added/stripped by transport
 
 ### Default behavior
 The default implementation uses JSON so the project runs immediately.
