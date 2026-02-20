@@ -3,6 +3,7 @@ from behave import given, when
 
 from src.utils.protocol.bnet_bin_message import BnetBinMessage
 from src.utils.placeholder_resolver import resolve_placeholders
+from src.utils.calculators import CryptoCalculator
 
 
 def _build_placeholder_context(context):
@@ -16,6 +17,13 @@ def _build_placeholder_context(context):
         "PVV": card.get("PVV", ""),
         "PvV": card.get("PVV", ""),
     }
+
+    crypto_data = CryptoCalculator().calculate_crypto_data(
+        card_number=extra.get("CARD", ""),
+        expiry_date=extra.get("EXPIRY_DATE", ""),
+    )
+    extra.update(crypto_data)
+    extra.update({f"CRYPTO_{name}": value for name, value in crypto_data.items()})
 
     # Prefer values from response, fallback to saved authorization request.
     for field in ("DE004", "DE037", "DE038"):
