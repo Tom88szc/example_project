@@ -61,6 +61,16 @@ def _print_placeholder_changes(original_request, resolved_request):
         print("  - no placeholder changes")
 
 
+def _print_message_block(title, message):
+    print(f"{title}:")
+    if not message:
+        print("  - <empty>")
+        return
+
+    for field in sorted(message.keys()):
+        print(f"  - {field}: {message[field]}")
+
+
 @given("the transaction with the following data")
 def step_tx_data(context):
     msg = {}
@@ -81,6 +91,7 @@ def step_send(context):
         print(f"  - MTI normalized to DE001: {mti_value}")
 
     request_for_log = dict(request_for_send)
+    _print_message_block("Request (resolved placeholders)", request_for_log)
 
     try:
         tx_builder = BnetBinMessage(request_for_log)
@@ -91,3 +102,4 @@ def step_send(context):
 
     context.last_request = request_for_send
     context.last_response = context.bnet.send(request_for_send)
+    _print_message_block("Response (host)", context.last_response)
