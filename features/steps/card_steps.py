@@ -1,5 +1,7 @@
 from behave import given
 
+from src.utils.card_details_store import get_or_create_card_details
+
 
 def _get_first_value(row, *keys):
     for key in keys:
@@ -16,17 +18,15 @@ def step_card_details(context):
     expiry = _get_first_value(row, "EXPIRY_DATE", "EXPIRY", "EXP")
     pvv = _get_first_value(row, "PVV", "Pvv", "PvV", "pvv")
 
-    # If provided -> override default card in context
-    current_card = getattr(context, "card", {}) or {}
-    updated_card = dict(current_card)
+    if not card_number:
+        return
 
-    if card_number:
-        updated_card["CARD_NUMBER"] = card_number
-    if expiry:
-        updated_card["EXPIRY_DATE"] = expiry
-    if pvv:
-        updated_card["PVV"] = pvv
+    card_data, created = get_or_create_card_details(
+        card_number=card_number,
+        expiry_date=expiry,
+        pvv=pvv,
+    )
 
-    if updated_card != current_card:
-        context.card = updated_card
-    # else: keep default from environment.py
+    context.card = card_data
+    status = "created" if created else "loaded"
+    print(f"Card details {status} for PAN ending {card_data['CARD_NUMBER'][-4:]}")

@@ -18,10 +18,14 @@ def _build_placeholder_context(context):
         "PvV": card.get("PVV", ""),
     }
 
-    crypto_data = CryptoCalculator().calculate_crypto_data(
-        card_number=extra.get("CARD", ""),
-        expiry_date=extra.get("EXPIRY_DATE", ""),
-    )
+    crypto_keys = ("CVC2", "EMV", "MSR", "PIN", "TRACK_EMV", "TRACK_MSR")
+    if all(card.get(key) for key in crypto_keys):
+        crypto_data = {key: str(card.get(key, "")) for key in crypto_keys}
+    else:
+        crypto_data = CryptoCalculator().calculate_crypto_data(
+            card_number=extra.get("CARD", ""),
+            expiry_date=extra.get("EXPIRY_DATE", ""),
+        )
     extra.update(crypto_data)
     extra.update({f"CRYPTO_{name}": value for name, value in crypto_data.items()})
 
