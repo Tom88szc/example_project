@@ -49,6 +49,9 @@ def _client_loop(conn: socket.socket, addr) -> None:
             msg = parse_payload(raw)
             log.info("RX: %s", msg)
             resp = handle(msg)
+            if "MTI" in resp and "DE001" not in resp:
+                resp = dict(resp)
+                resp["DE001"] = resp.pop("MTI")
             log.info("TX: %s", resp)
             payload = build_payload(resp)
             send_frame(conn, payload)
