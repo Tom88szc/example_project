@@ -27,14 +27,30 @@ class BnetClient:
         self.last_exchange: Dict[str, Any] = {}
 
     def send(self, fields: Dict[str, Any]) -> Dict[str, Any]:
-        self.transport.connect()
-        assert self.transport.sock is not None
-
         payload = build_payload(fields)
-        send_frame(self.transport.sock, payload)
+        self.last_exchange = {
+            "sent": {
+                "parsed": dict(fields),
+                "unparsed_hex": payload.hex(),
+            },
+            "received": {},
+        }
 
-        raw = recv_frame(self.transport.sock)
-        self.transport.close()
+        try:
+            self.transport.connect()
+            assert self.transport.sock is not None
+            send_frame(self.transport.sock, payload)
+            raw = recv_frame(self.transport.sock)
+        except Exception as exc:
+            self.last_exchange["received"] = {
+                "parsed": {},
+                "unparsed_hex": "",
+                "error": f"{type(exc).__name__}: {exc}",
+                "target": f"{self.transport.host}:{self.transport.port}",
+            }
+            raise
+        finally:
+            self.transport.close()
 
         if raw is None:
             raise ConnectionError("No response received (server disconnected?)")
