@@ -84,6 +84,10 @@ def _print_exchange(context):
 
     print("Wire data (received):")
     print(f"  - unparsed_hex: {received.get('unparsed_hex', '<missing>')}")
+    if received.get("error"):
+        print(f"  - error: {received.get('error')}")
+    if received.get("target"):
+        print(f"  - target: {received.get('target')}")
     _print_message_block("  - parsed", received.get("parsed", {}))
 
 @given("the transaction with the following data")
@@ -116,6 +120,8 @@ def step_send(context):
         print(f"BNET TX HEX unavailable: {exc}")
 
     context.last_request = request_for_send
-    context.last_response = context.bnet.send(request_for_send)
-    _print_message_block("Response (host)", context.last_response)
-    _print_exchange(context)
+    try:
+        context.last_response = context.bnet.send(request_for_send)
+        _print_message_block("Response (host)", context.last_response)
+    finally:
+        _print_exchange(context)

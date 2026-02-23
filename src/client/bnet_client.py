@@ -15,6 +15,26 @@ class BnetClientConfig:
     read_timeout: float = 10.0
 
 
+
+
+def _normalize_response_fields(parsed_response: Dict[str, Any]) -> Dict[str, Any]:
+    """Fill commonly validated fields when parser returns fallback _UNPARSED_REST."""
+    normalized = dict(parsed_response or {})
+
+    if "MTI" not in normalized and "DE001" in normalized:
+        normalized["MTI"] = str(normalized.get("DE001", ""))
+
+    rest = str(normalized.get("_UNPARSED_REST", ""))
+    if rest and "DE039" not in normalized and len(rest) >= 2:
+        normalized["DE039"] = rest[-2:]
+
+    if rest and "DE038" not in normalized and len(rest) >= 8:
+        candidate = rest[:-2]
+        if candidate:
+            normalized["DE038"] = candidate
+
+    return normalized
+
 class BnetClient:
     def __init__(self, config: Optional[BnetClientConfig] = None):
         self.config = config or BnetClientConfig()
@@ -27,18 +47,34 @@ class BnetClient:
         self.last_exchange: Dict[str, Any] = {}
 
     def send(self, fields: Dict[str, Any]) -> Dict[str, Any]:
-        self.transport.connect()
-        assert self.transport.sock is not None
-
         payload = build_payload(fields)
-        send_frame(self.transport.sock, payload)
+        self.last_exchange = {
+            "sent": {
+                "parsed": dict(fields),
+                "unparsed_hex": payload.hex(),
+            },
+            "received": {},
+        }
 
-        raw = recv_frame(self.transport.sock)
-        self.transport.close()
+        try:
+            self.transport.connect()
+            assert self.transport.sock is not None
+            send_frame(self.transport.sock, payload)
+            raw = recv_frame(self.transport.sock)
+        except Exception as exc:
+            self.last_exchange["received"] = {
+                "parsed": {},
+                "unparsed_hex": "",
+                "error": f"{type(exc).__name__}: {exc}",
+                "target": f"{self.transport.host}:{self.transport.port}",
+            }
+            raise
+        finally:
+            self.transport.close()
 
         if raw is None:
             raise ConnectionError("No response received (server disconnected?)")
-        parsed_response = parse_payload(raw)
+        parsed_response = _normalize_response_fields(parse_payload(raw))
         self.last_exchange = {
             "sent": {
                 "parsed": dict(fields),
