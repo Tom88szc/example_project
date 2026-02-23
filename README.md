@@ -13,7 +13,10 @@ Default protocol implementation uses JSON (so it runs). Replace parser/builder i
 Terminal 1:
 - `python run_sut_server.py`
 
-Terminal 2:
+Terminal 2 (lokalne testy z auto-start SUT):
+- `python run_tests_sut.py`
+
+Terminal 2 (testy przeciw prawdziwemu hostowi):
 - `python run_tests.py`
 
 ## Env vars

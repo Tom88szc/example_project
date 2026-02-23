@@ -17,17 +17,17 @@ Terminal 1 (SUT server):
 python run_sut_server.py
 ```
 
-Terminal 2 (tests):
+Terminal 2 (tests, local SUT with auto-start):
+```bash
+python run_tests_sut.py
+```
+
+### Option B: use real/external host
 ```bash
 python run_tests.py
 ```
 
-### Option B: auto-start server from test runner
-```bash
-python run_tests.py
-```
-
-If the port is already in use, the runner continues and assumes the server is already running.
+Use this mode only for tests against a real host (no local SUT auto-start).
 
 ---
 
