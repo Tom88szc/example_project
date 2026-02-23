@@ -21,3 +21,9 @@ def before_all(context):
 def after_all(context):
     # Client opens/closes per request in this simple sample.
     pass
+
+
+
+def before_scenario(context, scenario):
+    context.current_scenario = getattr(scenario, "name", "")
+    print(f"Scenario: {context.current_scenario}")

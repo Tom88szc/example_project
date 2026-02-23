@@ -71,6 +71,21 @@ def _print_message_block(title, message):
         print(f"  - {field}: {message[field]}")
 
 
+
+
+def _print_exchange(context):
+    exchange = getattr(getattr(context, "bnet", None), "last_exchange", {}) or {}
+    sent = exchange.get("sent", {})
+    received = exchange.get("received", {})
+
+    print("Wire data (sent):")
+    print(f"  - unparsed_hex: {sent.get('unparsed_hex', '<missing>')}")
+    _print_message_block("  - parsed", sent.get("parsed", {}))
+
+    print("Wire data (received):")
+    print(f"  - unparsed_hex: {received.get('unparsed_hex', '<missing>')}")
+    _print_message_block("  - parsed", received.get("parsed", {}))
+
 @given("the transaction with the following data")
 def step_tx_data(context):
     msg = {}
@@ -103,3 +118,4 @@ def step_send(context):
     context.last_request = request_for_send
     context.last_response = context.bnet.send(request_for_send)
     _print_message_block("Response (host)", context.last_response)
+    _print_exchange(context)

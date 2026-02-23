@@ -24,6 +24,7 @@ class BnetClient:
             connect_timeout=self.config.connect_timeout,
             read_timeout=self.config.read_timeout,
         )
+        self.last_exchange: Dict[str, Any] = {}
 
     def send(self, fields: Dict[str, Any]) -> Dict[str, Any]:
         self.transport.connect()
@@ -37,5 +38,16 @@ class BnetClient:
 
         if raw is None:
             raise ConnectionError("No response received (server disconnected?)")
+        parsed_response = parse_payload(raw)
+        self.last_exchange = {
+            "sent": {
+                "parsed": dict(fields),
+                "unparsed_hex": payload.hex(),
+            },
+            "received": {
+                "parsed": parsed_response,
+                "unparsed_hex": raw.hex(),
+            },
+        }
 
-        return parse_payload(raw)
+        return parsed_response
