@@ -15,6 +15,26 @@ class BnetClientConfig:
     read_timeout: float = 10.0
 
 
+
+
+def _normalize_response_fields(parsed_response: Dict[str, Any]) -> Dict[str, Any]:
+    """Fill commonly validated fields when parser returns fallback _UNPARSED_REST."""
+    normalized = dict(parsed_response or {})
+
+    if "MTI" not in normalized and "DE001" in normalized:
+        normalized["MTI"] = str(normalized.get("DE001", ""))
+
+    rest = str(normalized.get("_UNPARSED_REST", ""))
+    if rest and "DE039" not in normalized and len(rest) >= 2:
+        normalized["DE039"] = rest[-2:]
+
+    if rest and "DE038" not in normalized and len(rest) >= 8:
+        candidate = rest[:-2]
+        if candidate:
+            normalized["DE038"] = candidate
+
+    return normalized
+
 class BnetClient:
     def __init__(self, config: Optional[BnetClientConfig] = None):
         self.config = config or BnetClientConfig()
@@ -54,7 +74,7 @@ class BnetClient:
 
         if raw is None:
             raise ConnectionError("No response received (server disconnected?)")
-        parsed_response = parse_payload(raw)
+        parsed_response = _normalize_response_fields(parse_payload(raw))
         self.last_exchange = {
             "sent": {
                 "parsed": dict(fields),
