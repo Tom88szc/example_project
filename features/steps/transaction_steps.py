@@ -46,21 +46,6 @@ def _build_placeholder_context(context):
     return extra
 
 
-def _print_placeholder_changes(original_request, resolved_request):
-    print("Placeholder resolution:")
-    changed = False
-
-    for field in original_request:
-        before = str(original_request.get(field, ""))
-        after = str(resolved_request.get(field, ""))
-        if before != after:
-            changed = True
-            print(f"  - {field}: {before} -> {after}")
-
-    if not changed:
-        print("  - no placeholder changes")
-
-
 def _print_message_block(title, message):
     print(f"{title}:")
     if not message:
@@ -102,15 +87,13 @@ def step_tx_data(context):
 def step_send(context):
     request_raw = dict(context.last_request or {})
     request_for_send = resolve_placeholders(request_raw, _build_placeholder_context(context))
-    _print_placeholder_changes(request_raw, request_for_send)
-
     if "MTI" in request_for_send and "DE001" not in request_for_send:
         mti_value = request_for_send["MTI"]
         request_for_send["DE001"] = request_for_send.pop("MTI")
         print(f"  - MTI normalized to DE001: {mti_value}")
 
     request_for_log = dict(request_for_send)
-    _print_message_block("Request (resolved placeholders)", request_for_log)
+    _print_message_block("Request", request_for_log)
 
     try:
         tx_builder = BnetBinMessage(request_for_log)
