@@ -76,7 +76,21 @@ def _client_loop(conn: socket.socket, addr) -> None:
         while True:
             raw = recv_frame(conn, timeout=0.5)
             if raw is None:
+                try:
+                    probe = conn.recv(1, socket.MSG_PEEK)
+                except socket.timeout:
+                    continue
+                except OSError:
+                    break
+
+                if not probe:
+                    break
                 continue
+
+            if len(raw) <= 2:
+                log.info("Ignoring empty frame from %s:%s", addr[0], addr[1])
+                continue
+
             msg = parse_payload(raw)
             log.info("RX: %s", msg)
             resp = handle(msg)
