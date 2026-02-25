@@ -1,8 +1,17 @@
-
 import logging
 import os
 
 from src.client.bnet_client import BnetClient, BnetClientConfig
+
+
+def _print_message_block(title, message):
+    print(f"{title}:")
+    if not message:
+        print("  - <empty>")
+        return
+
+    for field in sorted(message.keys()):
+        print(f"  - {field}: {message[field]}")
 
 
 def before_all(context):
@@ -23,7 +32,31 @@ def after_all(context):
     pass
 
 
-
 def before_scenario(context, scenario):
     context.current_scenario = getattr(scenario, "name", "")
     print(f"Scenario: {context.current_scenario}")
+
+
+def after_step(context, step):
+    if step.status != "failed":
+        return
+
+    print("Failure context dump:")
+    _print_message_block("Last request", getattr(context, "last_request", {}) or {})
+    _print_message_block("Last response", getattr(context, "last_response", {}) or {})
+
+    exchange = getattr(getattr(context, "bnet", None), "last_exchange", {}) or {}
+    sent = exchange.get("sent", {})
+    received = exchange.get("received", {})
+
+    print("Wire data (sent):")
+    print(f"  - unparsed_hex: {sent.get('unparsed_hex', '<missing>')}")
+    _print_message_block("  - parsed", sent.get("parsed", {}))
+
+    print("Wire data (received):")
+    print(f"  - unparsed_hex: {received.get('unparsed_hex', '<missing>')}")
+    if received.get("error"):
+        print(f"  - error: {received.get('error')}")
+    if received.get("target"):
+        print(f"  - target: {received.get('target')}")
+    _print_message_block("  - parsed", received.get("parsed", {}))
