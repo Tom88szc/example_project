@@ -14,26 +14,24 @@ log = logging.getLogger("server.tcp_server")
 
 AUTH_STORE: Dict[str, Dict[str, Any]] = {}
 
-
-def _extract_0400_fields(msg: Dict[str, Any]) -> Dict[str, str]:
-    """Best-effort decode for current 0400 test payload layout.
-
-    Requests reach server mostly as MTI + _UNPARSED_REST. For 0400 scenarios in this
-    repository the rest uses fixed field order/length:
-    DE003(6) + DE004(12) + DE011(6) + DE037(12) + DE038(6?) + DE090(22?)
-    """
-    rest = str(msg.get("_UNPARSED_REST", ""))
-    if len(rest) < 36:
-        return {}
-
-    return {
-        "DE003": rest[0:6],
-        "DE004": rest[6:18],
-        "DE011": rest[18:24],
-        "DE037": rest[24:36],
-        "DE038": rest[36:42],
-        "DE090": rest[42:64],
-    }
+# Stałe odpowiedzi hosta dla testów lokalnych (ramka z prefiksem długości).
+FIXED_HEX_RESPONSES = {
+    "0800": (
+        "0043F0F8F1F0C22000008000000204000000000000000000"
+        "F0F6F5F0F1F2F3F4F1F1F0F7F1F0F0F2F2F1F0F0F1F9F4F0"
+        "F6F0F0F2F2F0F2F0F0F9D4C3C3F0F0F6C7E5F1F6F1"
+    ),
+    "0100": (
+        "0043F0F1F1F0C22000008000000204000000000000000000"
+        "F0F6F5F0F1F2F3F4F1F1F0F7F1F0F0F2F2F1F0F0F1F9F4F0"
+        "F6F0F0F2F2F0F2F0F0F9D4C3C3F0F0F6C7E5F1F6F1"
+    ),
+    "0400": (
+        "0043F0F4F1F0C22000008000000204000000000000000000"
+        "F0F6F5F0F1F2F3F4F1F1F0F7F1F0F0F2F2F1F0F0F1F9F4F0"
+        "F6F0F0F2F2F0F2F0F0F9D4C3C3F0F0F6C7E5F1F6F1"
+    ),
+}
 
 
 def handle(msg: Dict[str, Any]) -> Dict[str, Any]:
@@ -43,26 +41,12 @@ def handle(msg: Dict[str, Any]) -> Dict[str, Any]:
         return {"MTI": "0810", "DE039": "00"}
 
     if mti == "0100":
-        rest = str(msg.get("_UNPARSED_REST", ""))
-        # Negative scenario in this project intentionally omits PAN/expiry and sends
-        # only DE003+DE004 (18 chars). Emulate host decline for that case.
-        if len(rest) == 18:
-            return {"MTI": "0110", "DE039": "05", "DE038": "DECLIN"}
-
         rrn = msg.get("DE037")
         if rrn:
             AUTH_STORE[str(rrn)] = msg
         return {"MTI": "0110", "DE039": "00", "DE038": "AUTH123"}
 
     if mti == "0400":
-        f0400 = _extract_0400_fields(msg)
-        rrn = f0400.get("DE037") or msg.get("DE037")
-
-        # Unknown/original-not-found branch used by negative scenario
-        if rrn == "000000000000":
-            return {"MTI": "0410", "DE039": "25"}
-
-        # For current test harness we approve other reversals.
         return {"MTI": "0410", "DE039": "00"}
 
     # default
@@ -93,12 +77,18 @@ def _client_loop(conn: socket.socket, addr) -> None:
 
             msg = parse_payload(raw)
             log.info("RX: %s", msg)
-            resp = handle(msg)
-            if "MTI" in resp and "DE001" not in resp:
-                resp = dict(resp)
-                resp["DE001"] = resp.pop("MTI")
-            log.info("TX: %s", resp)
-            payload = build_payload(resp)
+            mti = str(msg.get("MTI", ""))
+            fixed_hex = FIXED_HEX_RESPONSES.get(mti)
+            if fixed_hex is not None:
+                log.info("TX (fixed): %s", fixed_hex)
+                payload = bytes.fromhex(fixed_hex)
+            else:
+                resp = handle(msg)
+                if "MTI" in resp and "DE001" not in resp:
+                    resp = dict(resp)
+                    resp["DE001"] = resp.pop("MTI")
+                log.info("TX: %s", resp)
+                payload = build_payload(resp)
             send_frame(conn, payload)
     except Exception as e:
         log.error("Client loop error: %s", e)

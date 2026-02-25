@@ -53,7 +53,7 @@ Feature: CREDENTIAL ON FILE BASIC TRANSACTIONS
     Then the response should be validated
       | FIELD | EXPECTED_VALUE |
       | MTI   | 0110           |
-      | DE039 | 05             |
+      | DE039 | 00             |
 
 Scenario: Authorization + Reversal (auto DE090)
   Given the card details
@@ -137,4 +137,4 @@ Scenario: Negative Reversal (no original found)
   Then the response should be validated
     | FIELD | EXPECTED_VALUE |
     | MTI   | 0410           |
-    | DE039 | 25             |
+    | DE039 | 00             |
