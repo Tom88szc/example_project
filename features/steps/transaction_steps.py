@@ -1,3 +1,4 @@
+import json
 
 from behave import given, when
 
@@ -79,7 +80,19 @@ def _print_exchange(context):
 def step_tx_data(context):
     msg = {}
     for r in context.table:
-        msg[r["FIELD"]] = r["VALUE"]
+        raw_value = r["VALUE"]
+        parsed_value = raw_value
+
+        if isinstance(raw_value, str):
+            candidate = raw_value.strip()
+            if candidate.startswith(("{", "[")) and candidate.endswith(("}", "]")):
+                try:
+                    parsed_value = json.loads(candidate)
+                except json.JSONDecodeError:
+                    parsed_value = raw_value
+
+        msg[r["FIELD"]] = parsed_value
+
     context.last_request = msg
 
 
