@@ -19,8 +19,14 @@ def step_validate(context):
     _print_message_block("Validation expected", expected)
     _print_message_block("Validation actual", actual)
 
+    print("Validation checks:")
+    if not expected:
+        print("  - <no expected fields provided>")
+
     missing = [k for k in expected.keys() if k not in actual]
     if missing:
+        for field in missing:
+            print(f"  - {field}: FAIL (field missing in response)")
         print("Validation result: FAIL")
         raise AssertionError(f"Missing fields: {missing}. Actual={actual}")
 
@@ -29,6 +35,9 @@ def step_validate(context):
         act = actual.get(k)
         if str(act) != str(exp):
             mismatches.append(f"{k}: expected={exp!r} actual={act!r}")
+            print(f"  - {k}: FAIL (expected={exp!r}, actual={act!r})")
+        else:
+            print(f"  - {k}: PASS (expected={exp!r}, actual={act!r})")
 
     if mismatches:
         print("Validation result: FAIL")
