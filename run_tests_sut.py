@@ -23,7 +23,7 @@ def _start_sut_if_needed(host: str, port: int) -> Optional[subprocess.Popen]:
     proc = subprocess.Popen(
         sut_cmd,
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stderr=None,
         cwd=os.path.dirname(os.path.abspath(__file__)),
     )
 
