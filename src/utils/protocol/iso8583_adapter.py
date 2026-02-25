@@ -1,16 +1,24 @@
+import logging
 from typing import Dict, Any
 
 from src.utils.protocol.bnet_parser_message import BnetParserMessage
 from src.utils.protocol.bnet_bin_message import BnetBinMessage
 
 
+log = logging.getLogger(__name__)
+
+
 def parse_payload(payload: bytes) -> Dict[str, Any]:
     """Parse payload bytes (WITH 2B length prefix) into fields dict."""
     hex_data = payload.hex()
     hex_data_trimmed = hex_data[4:]
-    bnet = BnetParserMessage(hex_data_trimmed)
-    recv_message = bnet.extract_fields()
-    return recv_message
+    try:
+        bnet = BnetParserMessage(hex_data_trimmed)
+        recv_message = bnet.extract_fields()
+        return recv_message
+    except Exception:
+        log.exception("Błąd parsowania wiadomości BNET (hex=%s)", hex_data_trimmed)
+        raise
 
 
 def build_payload(fields: Dict[str, Any]) -> bytes:
